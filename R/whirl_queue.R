@@ -26,11 +26,7 @@ whirl_queue <- R6::R6Class(
         "whirl"
       ),
       track_files_keep = zephyr::get_option("track_files_keep", "whirl"),
-      approved_pkgs_folder = zephyr::get_option(
-        "approved_pkgs_folder",
-        "whirl"
-      ),
-      approved_pkgs_url = zephyr::get_option("approved_pkgs_url", "whirl"),
+      approved_packages = zephyr::get_option("approved_packages", "whirl"),
       log_dir = zephyr::get_option("log_dir", "whirl")
       # jscpd:ignore-end
     ) {
@@ -44,8 +40,7 @@ whirl_queue <- R6::R6Class(
         out_formats,
         track_files_discards,
         track_files_keep,
-        approved_pkgs_folder,
-        approved_pkgs_url,
+        approved_packages,
         log_dir
       )
     },
@@ -88,9 +83,11 @@ whirl_queue <- R6::R6Class(
     #' @description Run scripts using the queue.
     #' This is a wrapper around calling both push() and wait().
     #' @param scripts [character] with full paths for the scripts to be executed
+    #' @param tag (optional) [character] Tag for the scripts to include in
+    #' the queue
     #' @return [invisible] self
-    run = \(scripts) {
-      wq_run(scripts, self)
+    run = \(scripts, tag = NA_character_) {
+      wq_run(scripts, tag, self)
     },
 
     #' @description Print method displaying the current status of the queue
@@ -119,13 +116,13 @@ whirl_queue <- R6::R6Class(
     #' @field next_ids [integer] Which scripts are next in the queue
     next_ids = \() {
       self$queue$id[self$queue$status == "waiting"] |>
-        head(length(self$available_workers))
+        utils::head(length(self$available_workers))
     },
 
     #' @field next_workers [integer] Which workers are next to be started
     next_workers = \() {
       self$available_workers |>
-        head(length(self$next_ids))
+        utils::head(length(self$next_ids))
     }
   ),
   private = list(
@@ -138,8 +135,7 @@ whirl_queue <- R6::R6Class(
     out_formats = NULL,
     track_files_discards = NULL,
     track_files_keep = NULL,
-    approved_pkgs_folder = NULL,
-    approved_pkgs_url = NULL,
+    approved_packages = NULL,
     log_dir = NULL
   )
 )
@@ -154,8 +150,7 @@ wq_initialise <- function(
   out_formats,
   track_files_discards,
   track_files_keep,
-  approved_pkgs_folder,
-  approved_pkgs_url,
+  approved_packages,
   log_dir
 ) {
   private$check_renv <- check_renv
@@ -164,8 +159,7 @@ wq_initialise <- function(
   private$out_formats <- out_formats
   private$track_files_discards <- track_files_discards
   private$track_files_keep <- track_files_keep
-  private$approved_pkgs_folder <- approved_pkgs_folder
-  private$approved_pkgs_url <- approved_pkgs_url
+  private$approved_packages <- approved_packages
   private$log_dir <- log_dir
 
   private$.queue <- tibble::tibble(
@@ -230,16 +224,7 @@ wq_skip <- function(self, private, scripts, tag) {
 wq_poll <- function(
   self,
   private,
-  timeout,
-  check_renv,
-  verbosity_level,
-  track_files,
-  out_formats,
-  track_files_discards,
-  track_files_keep,
-  approved_pkgs_folder,
-  approved_pkgs_url,
-  log_dir
+  timeout
 ) {
   # Start new sessions if there are available workers and waiting scripts in
   # the queue
@@ -256,8 +241,7 @@ wq_poll <- function(
         out_formats = private$out_formats,
         track_files_discards = private$track_files_discards,
         track_files_keep = private$track_files_keep,
-        approved_pkgs_folder = private$approved_pkgs_folder,
-        approved_pkgs_url = private$approved_pkgs_url,
+        approved_packages = private$approved_packages,
         log_dir = private$log_dir
       ),
       simplify = FALSE
@@ -323,7 +307,7 @@ wq_next_step <- function(self, private, wid) {
         )
       # fmt: skip
       private$.queue$status[[id_script]] <-
-        private$.queue$result[[id_script]]$status$status
+        private$.queue$result[[id_script]]$status$message
 
       private$.workers$session[wid] <- list(NULL)
       private$.workers$active[[wid]] <- FALSE
@@ -335,7 +319,7 @@ wq_next_step <- function(self, private, wid) {
   return(invisible(wid))
 }
 
-wq_run <- function(scripts, self) {
-  self$push(scripts)$wait()
+wq_run <- function(scripts, tag, self) {
+  self$push(scripts = scripts, tag = tag)$wait()
   on.exit(gc()) # finalizes used whirl_r_sessions - cleanup temp folders
 }
