@@ -15,6 +15,7 @@ cgid
 chdir
 cli
 colour
+colnames
 commonmark
 compats
 Compats
@@ -30,6 +31,7 @@ dir
 dontrun
 dplyr
 dset
+emph
 ENOENT
 ENOTDIR
 envir
@@ -40,6 +42,7 @@ Finalise
 funct
 Gakava
 getenv
+getframe
 getOption
 getwd
 gfm
@@ -56,6 +59,7 @@ hjust
 https
 httr
 initialise
+ìnst
 io
 jsonlite
 kable
@@ -68,6 +72,7 @@ lintr
 loadedpath
 loadedversion
 Lovemore
+Lundsgaard
 lvgk
 markua
 md
@@ -75,7 +80,9 @@ mdfmt
 mdformats
 mediatype
 multiarch
+namespacing
 nchars
+ncol
 newname
 nocov
 nodename
@@ -85,7 +92,9 @@ Novo
 novonordisk
 NovoNordisk
 nrow
+numpy
 Obucina
+Oliver
 ondiskversion
 openat
 opensource
@@ -160,3 +169,4 @@ winslash
 withr
 WORDLIST
 yaml
+

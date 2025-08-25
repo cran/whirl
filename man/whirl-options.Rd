@@ -70,11 +70,21 @@ track_files = TRUE
 
 \subsection{approved_packages}{
 
-List of approved packages and their version in the format: \{name\}@\{version\}
+List of approved R packages and their version in the format: \{name\}@\{version\}
 \itemize{
 \item Default: \code{NULL}
 \item Option: \code{whirl.approved_packages}
 \item Environment: \code{R_WHIRL_APPROVED_PACKAGES}
+}
+}
+
+\subsection{approved_python_packages}{
+
+List of approved Python packages and their version in the format: \{name\}@\{version\}
+\itemize{
+\item Default: \code{NULL}
+\item Option: \code{whirl.approved_python_packages}
+\item Environment: \code{R_WHIRL_APPROVED_PYTHON_PACKAGES}
 }
 }
 
@@ -124,6 +134,17 @@ start, in milliseconds.
 \item Default: \code{9000}
 \item Option: \code{whirl.wait_timeout}
 \item Environment: \code{R_WHIRL_WAIT_TIMEOUT}
+}
+}
+
+\subsection{environment_secrets}{
+
+Secret environment variable patterns.
+Any variables matching will not be included in the logs.
+\itemize{
+\item Default: \code{c("BASH_FUNC", "_SSL_CERT", "_KEY", "_PAT", "_TOKEN")}
+\item Option: \code{whirl.environment_secrets}
+\item Environment: \code{R_WHIRL_ENVIRONMENT_SECRETS}
 }
 }
 }

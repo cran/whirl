@@ -55,15 +55,15 @@ The simplest way is to provide the path to a single script:
 library(whirl)
 
 run("success.R")
-#> ✔ success.R: Completed succesfully
+#> ✔ success.R: Completed succesfully. See log html.
 ```
 
 It is also possible to run several scripts simultaneously:
 
 ``` r
 result <- run(c("success.R", "warning.R"), n_workers = 2)
-#> ✔ success.R: Completed succesfully
-#> ⚠ warning.R: Completed with warnings
+#> ✔ success.R: Completed succesfully. See log html.
+#> ! warning.R: Completed with warnings. See log html.
 ```
 
 Here we are specifying that `run()` can use up to two simultaneous
@@ -121,9 +121,9 @@ scripts in the second steps.
 
 ``` r
 result <- run("_whirl.yaml", n_workers = 2)
-#> ✔ success.R: Completed succesfully
-#> ✖ error.R: Completed with errors
-#> ⚠ warning.R: Completed with warnings
+#> ✔ success.R: Completed succesfully. See log html.
+#> ! warning.R: Completed with warnings. See log html.
+#> ✖ error.R: Completed with errors. See log html.
 ```
 
 ``` r
@@ -146,8 +146,8 @@ logging for your needs see the following:
   advanced usage.
 - `vignette("articles/example")`: With a simple example, including the
   created log.
-- [whirl-options](https://novonordisk-opensource.github.io/whirl/reference/whirl-options.html):
-  On how to change the default behavior of whirl.
+- `help("whirl-options")`: On how to change the default behavior of
+  whirl.
 - [NovoNordisk-OpenSource/R-packages](https://novonordisk-opensource.github.io/R-packages/)
   for an overview of connector and other R packages published by Novo
   Nordisk.

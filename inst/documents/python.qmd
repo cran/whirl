@@ -1,9 +1,26 @@
 ---
 ---
 
-## Python Packages
+:::{.callout-note collapse=false appearance="minimal"}
+## Python packages used directly
 
 ```{r}
 #| echo: false
-result$session$python
+result$session$python |> 
+    dplyr::filter(directly_used) |> 
+    format_approved()
 ```
+
+:::
+
+:::{.callout-note collapse=true appearance="minimal"}
+## Python packages used indirectly
+
+```{r}
+#| echo: false
+result$session$python |> 
+    dplyr::filter(!.data$directly_used) |> 
+    dplyr::select("package", "version", "path")
+```
+
+:::

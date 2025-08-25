@@ -8,7 +8,6 @@ template-partials:
 params:
   title: 'dev'
   with_library_paths: library_paths
-  approved_packages: NULL
   track_files: FALSE
   tmpdir: '.'
 format:
@@ -18,6 +17,7 @@ format:
     toc-depth: 2
     toc-expand: true
     smooth-scroll: true
+    css: style.css
 ---
 
 # Summary
@@ -27,17 +27,34 @@ format:
 #| echo: false
 .libPaths(c(character(), params$with_library_paths))
 
-knit_print.data.frame = function(x, ...) {
-  names(x) <- gsub( # Use space instead of . or _ in columns names
+file.path(params$tmpdir, "parent_options.rds") |>
+  readRDS() |>
+  options()
+
+format_approved <- function(x) {
+  if (all(is.na(x$approved))) {
+    x$approved <- NULL
+    return(x)
+  }
+
+  x$approved = ifelse(x$approved == TRUE, "\u2705 Yes", "\u274C No")
+
+  x
+}
+
+knit_print.data.frame <- function(x, ...) {
+  names(x) <- gsub(
+    # Use space instead of . or _ in columns names
     pattern = "\\.|_",
     replacement = " ",
     x = names(x)
   )
 
-  names(x) <- gsub( # Convert all column names to title case
-    pattern = "\\b([[:alpha:]])([[:alpha:]]+)", 
-    replacement = "\\U\\1\\L\\2", 
-    x = names(x), 
+  names(x) <- gsub(
+    # Convert all column names to title case
+    pattern = "\\b([[:alpha:]])([[:alpha:]]+)",
+    replacement = "\\U\\1\\L\\2",
+    x = names(x),
     perl = TRUE
   )
 
@@ -45,16 +62,21 @@ knit_print.data.frame = function(x, ...) {
     x[[i]] <- ifelse(x[[i]], "Yes", "No") # Yes/No instead of TRUE/FALSE
   }
 
-  x |> 
-    knitr::kable() |>
+  x |>
+    knitr::kable(format = "html") |>
     kableExtra::kable_styling(
       bootstrap_options = "striped",
       full_width = TRUE
     ) |>
-  knitr::knit_print()
+    knitr::knit_print()
 }
 
-registerS3method("knit_print", "data.frame", knit_print.data.frame, envir = asNamespace("knitr"))
+registerS3method(
+  "knit_print",
+  "data.frame",
+  knit_print.data.frame,
+  envir = asNamespace("knitr")
+)
 ```
 
 ```{r}
@@ -62,19 +84,21 @@ registerS3method("knit_print", "data.frame", knit_print.data.frame, envir = asNa
 #| echo: false
 result <- whirl:::read_info(
   script = file.path(params$tmpdir, "script.rds"),
-  md = file.path(params$tmpdir, "doc.md"), 
+  md = file.path(params$tmpdir, "doc.md"),
   start = file.path(params$tmpdir, "start.rds"),
   log = file.path(params$tmpdir, "log_msg.json"),
+  pkgs_used = file.path(params$tmpdir, "pkgs_used.rds"),
   session = file.path(params$tmpdir, "session_info.rds"),
   environment = file.path(params$tmpdir, "environment.rds"),
   options = file.path(params$tmpdir, "options.rds"),
-  python = file.path(params$tmpdir, "python_imports.json"),
-  approved_packages = params$approved_packages,
+  python_pip_list = file.path(params$tmpdir, "py_pip_list.rds"),
+  python_old_status = file.path(params$tmpdir, "py_old_status.json"),
+  python_new_status = file.path(params$tmpdir, "py_new_status.json"),
   track_files = isTRUE(as.logical(params$track_files))
 )
 
 saveRDS(
-  object = result, 
+  object = result,
   file = file.path(params$tmpdir, "result.rds")
 )
 
@@ -103,7 +127,7 @@ whirl:::quarto_callout(
 #| eval: !expr file.exists(file.path(params$tmpdir, "renv_status.rds"))
 params$tmpdir |>
   file.path("renv_status.rds") |>
-  readRDS() |> 
+  readRDS() |>
   whirl:::knit_print_whirl_renv_status()
 ```
 
@@ -114,10 +138,13 @@ params$tmpdir |>
 ```
 
 # Script
+::: {.script-container}
 
 ```{r}
 #| child: !expr file.path(params$tmpdir, "doc.md")
 ```
+
+:::
 
 # Session info
 
@@ -132,6 +159,7 @@ knitr::opts_chunk$set(
 )
 ```
 
+:::{.callout-note collapse=false appearance="minimal"}
 ## Platform
 
 ```{r}
@@ -139,23 +167,40 @@ knitr::opts_chunk$set(
 result$session$platform
 ```
 
+:::
+
 ```{r}
 #| label: Python
 #| child: !expr file.path(params$tmpdir, "python.qmd")
 #| eval: !expr grepl("\\.py$", params$title)
 ```
 
-## R Packages
+:::{.callout-note collapse=false appearance="minimal"}
+## R packages used directly
 
 ```{r}
-#| label: R packages
-if (all(is.na(result$session$R$approved))) {
-  result$session$R[c("package", "version", "attached", "source")]
-} else {
-  result$session$R[c("package", "version", "attached", "approved", "source")]
-}
+#| label: R packages used directly
+result$session$R |>
+  dplyr::filter(directly_used) |>
+  dplyr::select("package", "version", "approved", "source") |> 
+  format_approved()
 ```
 
+:::
+
+:::{.callout-note collapse=true appearance="minimal"}
+## R packages used indirectly
+
+```{r}
+#| label: R packages used indirectly
+result$session$R |>
+  dplyr::filter(!directly_used) |>
+  dplyr::select("package", "version", "source")
+```
+
+:::
+
+:::{.callout-note collapse=true appearance="minimal"}
 ## Environment variables
 
 ```{r}
@@ -163,9 +208,14 @@ if (all(is.na(result$session$R$approved))) {
 result$session$environment
 ```
 
+:::
+
+:::{.callout-note collapse=true appearance="minimal"}
 ## Options
 
 ```{r}
 #| label: Options
 result$session$options
 ```
+
+:::
